@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影片文字編輯器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+        }
+
+        .left-panel {
+            min-width: 0;
+        }
+
+        .right-panel {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            background: #f8f9ff;
+            transition: all 0.3s;
+            grid-column: 1 / -1;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .upload-btn:hover {
+            transform: scale(1.05);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .video-container {
+            position: relative;
+            margin-bottom: 20px;
+            display: none;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        #videoPlayer {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        .canvas-container {
+            position: relative;
+            display: none;
+            width: 100%;
+        }
+
+        #canvas {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .preview-header {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .preview-header h3 {
+            color: #667eea;
+            margin: 0;
+        }
+
+        .controls {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .control-group input[type="text"],
+        .control-group textarea,
+        .control-group input[type="number"],
+        .control-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .control-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .control-group input:focus,
+        .control-group textarea:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .color-size-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 50px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .color-picker-group {
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+
+        .stroke-picker-group {
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            margin-top: 10px;
+        }
+
+        .color-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .stroke-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9ff;
+            border-radius: 8px;
+        }
+
+        .stroke-item input[type="color"] {
+            width: 60px;
+            height: 40px;
+        }
+
+        .stroke-item input[type="number"] {
+            width: 80px;
+            padding: 5px;
+        }
+
+        .stroke-item label {
+            margin: 0;
+            font-size: 0.9em;
+        }
+
+        .color-item input[type="color"] {
+            width: 60px;
+            height: 40px;
+        }
+
+        .color-item input[type="range"] {
+            flex: 1;
+        }
+
+        .color-item button {
+            padding: 5px 15px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .add-color-btn {
+            width: 100%;
+            padding: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .font-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .uploaded-fonts {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .text-list {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .text-item {
+            background: #f8f9ff;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .text-item:hover {
+            background: #f0f2ff;
+            transform: translateX(5px);
+        }
+
+        .text-item.selected {
+            background: #e8f4f8;
+            border-left-color: #764ba2;
+        }
+
+        .text-item-content {
+            flex: 1;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .text-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .text-item-btn {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .mode-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .mode-add {
+            background: #27ae60;
+            color: white;
+        }
+
+        .mode-edit {
+            background: #f39c12;
+            color: white;
+        }
+
+        .tab-navigation {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: #fff;
+            padding: 5px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: #f8f9ff;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .action-buttons {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 15px 0;
+            margin-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .right-panel {
+                position: relative;
+                top: 0;
+            }
+            
+            .upload-section {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 影片文字編輯器</h1>
+            <p>輕鬆在影片上添加多色、多行文字,支援自訂字型</p>
+        </div>
+
+        <div class="content">
+            <div class="upload-section">
+                <h2 style="margin-bottom: 15px; color: #667eea;">上傳檔案</h2>
+                <p style="margin-bottom: 20px; color: #666;">支援 MP4, WebM, MOV 等影片格式 / TTF, OTF 字型檔</p>
+                <label for="videoInput" class="upload-btn">📹 選擇影片</label>
+                <label for="fontInput" class="upload-btn">📤 上傳字型</label>
+                <input type="file" id="videoInput" accept="video/*">
+                <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2" multiple>
+                <div class="uploaded-fonts" id="uploadedFonts" style="display:none;"></div>
+            </div>
+
+            <div class="left-panel">
+                <div class="controls" id="controls" style="display: none;">
+                    <h3 style="margin-bottom: 20px; color: #667eea;">文字設定</h3>
+                    
+                    <div id="modeIndicator" class="mode-indicator mode-add">➕ 新增模式</div>
+
+                    <div class="tab-navigation">
+                        <button class="tab-btn active" onclick="switchTab('basic')">📝 基本</button>
+                        <button class="tab-btn" onclick="switchTab('style')">🎨 樣式</button>
+                        <button class="tab-btn" onclick="switchTab('list')">📋 列表</button>
+                    </div>
+
+                    <!-- 基本設定頁 -->
+                    <div id="tab-basic" class="tab-content active">
+                        <div class="control-group">
+                            <label>文字內容(支援多行)</label>
+                            <textarea id="textInput" placeholder="輸入要顯示的文字&#10;可以換行輸入多行文字" style="min-height: 120px;"></textarea>
+                        </div>
+
+                        <div class="color-size-group">
+                            <div class="control-group">
+                                <label>文字大小</label>
+                                <input type="number" id="fontSize" value="48" min="12" max="200">
+                            </div>
+                            <div class="control-group">
+                                <label>行距</label>
+                                <input type="number" id="lineHeight" value="1.2" min="0.5" max="3" step="0.1">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>字體</label>
+                            <select id="fontFamily">
+                                <option value="Arial">Arial</option>
+                                <option value="微軟正黑體">微軟正黑體</option>
+                                <option value="Impact">Impact</option>
+                                <option value="Comic Sans MS">Comic Sans MS</option>
+                                <option value="Times New Roman">Times New Roman</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 樣式設定頁 -->
+                    <div id="tab-style" class="tab-content">
+                        <div class="control-group">
+                            <label>文字顏色(可添加多個漸層色)</label>
+                            <div class="color-picker-group" id="colorPickerGroup">
+                                <div class="color-item">
+                                    <input type="color" value="#ffffff" class="text-color">
+                                    <label>位置: <span class="position-value">0%</span></label>
+                                    <input type="range" min="0" max="100" value="0" class="color-position">
+                                </div>
+                            </div>
+                            <button class="add-color-btn" onclick="addColorPicker()">➕ 添加顏色</button>
+                        </div>
+
+                        <div class="control-group">
+                            <label>文字邊框(可添加多層邊框)</label>
+                            <div class="stroke-picker-group" id="strokePickerGroup">
+                                <div class="stroke-item">
+                                    <input type="color" value="#000000" class="stroke-color">
+                                    <label>粗細:</label>
+                                    <input type="number" value="3" min="0" max="50" class="stroke-width">
+                                    <label>px</label>
+                                </div>
+                            </div>
+                            <button class="add-color-btn" onclick="addStrokePicker()">➕ 添加邊框層</button>
+                        </div>
+                    </div>
+
+                    <!-- 文字列表頁 -->
+                    <div id="tab-list" class="tab-content">
+                        <div id="textList" class="text-list" style="display: none; max-height: 400px;">
+                            <h4 style="margin-bottom: 10px; color: #555;">已添加的文字</h4>
+                            <div id="textListItems"></div>
+                        </div>
+                        <div id="emptyListMessage" style="text-align: center; padding: 40px; color: #999;">
+                            <p style="font-size: 3em; margin-bottom: 10px;">📝</p>
+                            <p>尚未添加任何文字</p>
+                            <p style="font-size: 0.9em; margin-top: 5px;">請到「基本」頁面添加文字</p>
+                        </div>
+                    </div>
+
+                    <!-- 固定在底部的操作按鈕 -->
+                    <div class="action-buttons">
+                        <div class="btn-group">
+                            <button class="btn btn-primary" id="addOrUpdateBtn" onclick="addOrUpdateText()">➕ 添加文字</button>
+                            <button class="btn btn-success" onclick="exportVideo()">💾 下載影片</button>
+                            <button class="btn btn-danger" onclick="clearAll()">🗑️ 清除全部</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="preview-header">
+                    <h3>🎬 即時預覽</h3>
+                </div>
+                
+                <div class="video-container" id="videoContainer">
+                    <video id="videoPlayer" controls></video>
+                </div>
+
+                <div class="canvas-container" id="canvasContainer">
+                    <canvas id="canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const videoInput = document.getElementById('videoInput');
+        const fontInput = document.getElementById('fontInput');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const videoContainer = document.getElementById('videoContainer');
+        const controls = document.getElementById('controls');
+        const canvas = document.getElementById('canvas');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const ctx = canvas.getContext('2d');
+        const uploadedFontsDiv = document.getElementById('uploadedFonts');
+        
+        let texts = [];
+        let selectedText = null;
+        let videoFile = null;
+        let uploadedFonts = [];
+        let editingIndex = -1;
+
+        function switchTab(tabName) {
+            // 隱藏所有分頁
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 顯示選中的分頁
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        videoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                videoFile = file;
+                const url = URL.createObjectURL(file);
+                videoPlayer.src = url;
+                videoContainer.style.display = 'block';
+                controls.style.display = 'block';
+                
+                videoPlayer.addEventListener('loadedmetadata', function() {
+                    canvas.width = 300;
+                    canvas.height = 300;
+                    videoPlayer.currentTime = 0.1;
+                    setTimeout(() => {
+                        canvasContainer.style.display = 'block';
+                        drawFrame();
+                    }, 100);
+                });
+            }
+        });
+
+        fontInput.addEventListener('change', async function(e) {
+            const files = e.target.files;
+            const fontSelect = document.getElementById('fontFamily');
+            
+            for (let file of files) {
+                const fontName = file.name.replace(/\.(ttf|otf|woff|woff2)$/i, '');
+                const fontUrl = URL.createObjectURL(file);
+                
+                try {
+                    const fontFace = new FontFace(fontName, `url(${fontUrl})`);
+                    await fontFace.load();
+                    document.fonts.add(fontFace);
+                    
+                    uploadedFonts.push(fontName);
+                    
+                    const option = document.createElement('option');
+                    option.value = fontName;
+                    option.textContent = `${fontName} (自訂)`;
+                    fontSelect.appendChild(option);
+                    
+                    uploadedFontsDiv.style.display = 'block';
+                    const tag = document.createElement('span');
+                    tag.className = 'font-tag';
+                    tag.textContent = fontName;
+                    uploadedFontsDiv.appendChild(tag);
+                    
+                } catch (error) {
+                    console.error('字型載入失敗:', error);
+                    alert(`字型 "${fontName}" 載入失敗`);
+                }
+            }
+        });
+
+        function addStrokePicker() {
+            const group = document.getElementById('strokePickerGroup');
+            const strokeItem = document.createElement('div');
+            strokeItem.className = 'stroke-item';
+            
+            const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+            const currentWidth = group.children.length > 0 ? 
+                parseInt(group.children[group.children.length - 1].querySelector('.stroke-width').value) + 3 : 3;
+            
+            strokeItem.innerHTML = `
+                <input type="color" value="${randomColor}" class="stroke-color">
+                <label>粗細:</label>
+                <input type="number" value="${currentWidth}" min="0" max="50" class="stroke-width">
+                <label>px</label>
+                <button onclick="this.parentElement.remove()" style="padding: 5px 15px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">✕</button>
+            `;
+            
+            group.appendChild(strokeItem);
+        }
+
+        function addColorPicker() {
+            const group = document.getElementById('colorPickerGroup');
+            const colorItem = document.createElement('div');
+            colorItem.className = 'color-item';
+            
+            const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+            const itemCount = group.children.length;
+            const position = Math.min(100, itemCount * 20);
+            
+            colorItem.innerHTML = `
+                <input type="color" value="${randomColor}" class="text-color">
+                <label>位置: <span class="position-value">${position}%</span></label>
+                <input type="range" min="0" max="100" value="${position}" class="color-position">
+                <button onclick="this.parentElement.remove()">✕</button>
+            `;
+            
+            group.appendChild(colorItem);
+            
+            const slider = colorItem.querySelector('.color-position');
+            const positionLabel = colorItem.querySelector('.position-value');
+            slider.addEventListener('input', function() {
+                positionLabel.textContent = this.value + '%';
+            });
+        }
+
+        function addOrUpdateText() {
+            const text = document.getElementById('textInput').value;
+            const size = parseInt(document.getElementById('fontSize').value);
+            const font = document.getElementById('fontFamily').value;
+            const lineHeight = parseFloat(document.getElementById('lineHeight').value);
+
+            if (!text) {
+                alert('請輸入文字內容!');
+                return;
+            }
+
+            const lines = text.split('\n');
+            
+            const textObj = {
+                lines: lines,
+                size: size,
+                font: font,
+                lineHeight: lineHeight,
+                x: editingIndex >= 0 ? texts[editingIndex].x : 150,
+                y: editingIndex >= 0 ? texts[editingIndex].y : 150,
+                colors: [],
+                strokes: []
+            };
+
+            const colorItems = document.querySelectorAll('.color-item');
+            colorItems.forEach(item => {
+                textObj.colors.push({
+                    color: item.querySelector('.text-color').value,
+                    position: item.querySelector('.color-position').value / 100
+                });
+            });
+
+            const strokeItems = document.querySelectorAll('.stroke-item');
+            strokeItems.forEach(item => {
+                const width = parseInt(item.querySelector('.stroke-width').value);
+                if (width > 0) {
+                    textObj.strokes.push({
+                        color: item.querySelector('.stroke-color').value,
+                        width: width
+                    });
+                }
+            });
+
+            textObj.strokes.sort((a, b) => b.width - a.width);
+
+            if (editingIndex >= 0) {
+                texts[editingIndex] = textObj;
+                exitEditMode();
+            } else {
+                texts.push(textObj);
+            }
+
+            document.getElementById('textInput').value = '';
+            updateTextList();
+            drawFrame();
+        }
+
+        function editText(index) {
+            editingIndex = index;
+            const textObj = texts[index];
+            
+            document.getElementById('textInput').value = textObj.lines.join('\n');
+            document.getElementById('fontSize').value = textObj.size;
+            document.getElementById('fontFamily').value = textObj.font;
+            document.getElementById('lineHeight').value = textObj.lineHeight;
+            
+            const colorGroup = document.getElementById('colorPickerGroup');
+            colorGroup.innerHTML = '';
+            
+            textObj.colors.forEach((colorData, i) => {
+                const colorItem = document.createElement('div');
+                colorItem.className = 'color-item';
+                const position = Math.round(colorData.position * 100);
+                
+                colorItem.innerHTML = `
+                    <input type="color" value="${colorData.color}" class="text-color">
+                    <label>位置: <span class="position-value">${position}%</span></label>
+                    <input type="range" min="0" max="100" value="${position}" class="color-position">
+                    ${i > 0 ? '<button onclick="this.parentElement.remove()">✕</button>' : ''}
+                `;
+                
+                colorGroup.appendChild(colorItem);
+                
+                const slider = colorItem.querySelector('.color-position');
+                const positionLabel = colorItem.querySelector('.position-value');
+                slider.addEventListener('input', function() {
+                    positionLabel.textContent = this.value + '%';
+                });
+            });
+            
+            const strokeGroup = document.getElementById('strokePickerGroup');
+            strokeGroup.innerHTML = '';
+            
+            if (textObj.strokes && textObj.strokes.length > 0) {
+                textObj.strokes.forEach((strokeData, i) => {
+                    const strokeItem = document.createElement('div');
+                    strokeItem.className = 'stroke-item';
+                    
+                    strokeItem.innerHTML = `
+                        <input type="color" value="${strokeData.color}" class="stroke-color">
+                        <label>粗細:</label>
+                        <input type="number" value="${strokeData.width}" min="0" max="50" class="stroke-width">
+                        <label>px</label>
+                        ${i > 0 ? '<button onclick="this.parentElement.remove()" style="padding: 5px 15px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">✕</button>' : ''}
+                    `;
+                    
+                    strokeGroup.appendChild(strokeItem);
+                });
+            } else {
+                const strokeItem = document.createElement('div');
+                strokeItem.className = 'stroke-item';
+                strokeItem.innerHTML = `
+                    <input type="color" value="#000000" class="stroke-color">
+                    <label>粗細:</label>
+                    <input type="number" value="3" min="0" max="50" class="stroke-width">
+                    <label>px</label>
+                `;
+                strokeGroup.appendChild(strokeItem);
+            }
+            
+            updateModeIndicator(true);
+            updateTextList();
+            document.getElementById('textInput').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function deleteText(index) {
+            if (confirm('確定要刪除這個文字嗎?')) {
+                texts.splice(index, 1);
+                if (editingIndex === index) {
+                    exitEditMode();
+                } else if (editingIndex > index) {
+                    editingIndex--;
+                }
+                updateTextList();
+                drawFrame();
+            }
+        }
+
+        function exitEditMode() {
+            editingIndex = -1;
+            document.getElementById('textInput').value = '';
+            updateModeIndicator(false);
+            updateTextList();
+        }
+
+        function updateModeIndicator(isEditMode) {
+            const indicator = document.getElementById('modeIndicator');
+            const btn = document.getElementById('addOrUpdateBtn');
+            
+            if (isEditMode) {
+                indicator.className = 'mode-indicator mode-edit';
+                indicator.innerHTML = '✏️ 編輯模式 <button onclick="exitEditMode()" style="margin-left:10px; background:white; border:none; padding:3px 10px; border-radius:10px; cursor:pointer;">取消</button>';
+                btn.textContent = '💾 更新文字';
+            } else {
+                indicator.className = 'mode-indicator mode-add';
+                indicator.textContent = '➕ 新增模式';
+                btn.textContent = '➕ 添加文字';
+            }
+        }
+
+        function updateTextList() {
+            const listDiv = document.getElementById('textList');
+            const itemsDiv = document.getElementById('textListItems');
+            
+            if (texts.length === 0) {
+                listDiv.style.display = 'none';
+                return;
+            }
+            
+            listDiv.style.display = 'block';
+            itemsDiv.innerHTML = '';
+            
+            texts.forEach((textObj, index) => {
+                const item = document.createElement('div');
+                item.className = 'text-item' + (index === editingIndex ? ' selected' : '');
+                
+                const preview = textObj.lines.join(' ').substring(0, 30) + (textObj.lines.join(' ').length > 30 ? '...' : '');
+                
+                item.innerHTML = `
+                    <div class="text-item-content">
+                        <strong>${index + 1}.</strong> ${preview}<br>
+                        <small style="color: #666;">字型: ${textObj.font} | 大小: ${textObj.size}px | 顏色: ${textObj.colors.length}色 | 邊框: ${textObj.strokes ? textObj.strokes.length : 0}層</small>
+                    </div>
+                    <div class="text-item-actions">
+                        <button class="text-item-btn btn-edit" onclick="editText(${index})">✏️ 編輯</button>
+                        <button class="text-item-btn btn-delete" onclick="deleteText(${index})">🗑️</button>
+                    </div>
+                `;
+                
+                itemsDiv.appendChild(item);
+            });
+        }
+
+        function drawFrame() {
+            if (!videoPlayer.videoWidth || !videoPlayer.videoHeight) {
+                return;
+            }
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const videoRatio = videoPlayer.videoWidth / videoPlayer.videoHeight;
+            const canvasRatio = canvas.width / canvas.height;
+            
+            let sx, sy, sw, sh;
+            
+            if (videoRatio > canvasRatio) {
+                sh = videoPlayer.videoHeight;
+                sw = sh * canvasRatio;
+                sx = (videoPlayer.videoWidth - sw) / 2;
+                sy = 0;
+            } else {
+                sw = videoPlayer.videoWidth;
+                sh = sw / canvasRatio;
+                sx = 0;
+                sy = (videoPlayer.videoHeight - sh) / 2;
+            }
+            
+            ctx.drawImage(videoPlayer, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+            texts.forEach(textObj => {
+                ctx.font = `${textObj.size}px ${textObj.font}`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                const lineSpacing = textObj.size * textObj.lineHeight;
+                const totalHeight = lineSpacing * textObj.lines.length;
+                const startY = textObj.y - (totalHeight / 2) + (lineSpacing / 2);
+
+                textObj.lines.forEach((line, index) => {
+                    const y = startY + (index * lineSpacing);
+                    
+                    const metrics = ctx.measureText(line);
+                    const textWidth = metrics.width;
+                    
+                    let fillStyle;
+                    if (textObj.colors.length === 1) {
+                        fillStyle = textObj.colors[0].color;
+                    } else {
+                        const gradient = ctx.createLinearGradient(
+                            textObj.x - textWidth/2, y, 
+                            textObj.x + textWidth/2, y
+                        );
+                        textObj.colors.forEach(c => {
+                            gradient.addColorStop(c.position, c.color);
+                        });
+                        fillStyle = gradient;
+                    }
+                    
+                    if (textObj.strokes && textObj.strokes.length > 0) {
+                        textObj.strokes.forEach(stroke => {
+                            ctx.strokeStyle = stroke.color;
+                            ctx.lineWidth = stroke.width;
+                            ctx.lineJoin = 'round';
+                            ctx.miterLimit = 2;
+                            ctx.strokeText(line, textObj.x, y);
+                        });
+                    } else {
+                        ctx.strokeStyle = 'black';
+                        ctx.lineWidth = 3;
+                        ctx.strokeText(line, textObj.x, y);
+                    }
+                    
+                    ctx.fillStyle = fillStyle;
+                    ctx.fillText(line, textObj.x, y);
+                });
+            });
+        }
+
+        videoPlayer.addEventListener('play', function() {
+            canvasContainer.style.display = 'block';
+            videoContainer.style.display = 'none';
+            renderLoop();
+        });
+
+        videoPlayer.addEventListener('pause', function() {
+            canvasContainer.style.display = 'block';
+            videoContainer.style.display = 'none';
+            drawFrame();
+        });
+
+        videoPlayer.addEventListener('seeked', function() {
+            if (videoPlayer.paused) {
+                canvasContainer.style.display = 'block';
+                videoContainer.style.display = 'none';
+                drawFrame();
+            }
+        });
+
+        function renderLoop() {
+            if (!videoPlayer.paused && !videoPlayer.ended) {
+                drawFrame();
+                requestAnimationFrame(renderLoop);
+            }
+        }
+
+        canvas.addEventListener('mousedown', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            selectedText = null;
+            for (let i = texts.length - 1; i >= 0; i--) {
+                const textObj = texts[i];
+                ctx.font = `${textObj.size}px ${textObj.font}`;
+                
+                const lineSpacing = textObj.size * textObj.lineHeight;
+                const totalHeight = lineSpacing * textObj.lines.length;
+                
+                let maxWidth = 0;
+                textObj.lines.forEach(line => {
+                    const metrics = ctx.measureText(line);
+                    maxWidth = Math.max(maxWidth, metrics.width);
+                });
+
+                if (x >= textObj.x - maxWidth/2 && x <= textObj.x + maxWidth/2 &&
+                    y >= textObj.y - totalHeight/2 && y <= textObj.y + totalHeight/2) {
+                    selectedText = textObj;
+                    break;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (selectedText && e.buttons === 1) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                selectedText.x = (e.clientX - rect.left) * scaleX;
+                selectedText.y = (e.clientY - rect.top) * scaleY;
+                drawFrame();
+            }
+        });
+
+        function clearAll() {
+            if (confirm('確定要清除所有文字嗎?')) {
+                texts = [];
+                exitEditMode();
+                updateTextList();
+                drawFrame();
+            }
+        }
+
+        async function exportVideo() {
+            if (!videoFile) {
+                alert('請先上傳影片!');
+                return;
+            }
+
+            const exportBtn = event.target;
+            exportBtn.disabled = true;
+            exportBtn.textContent = '⏳ 處理中...';
+
+            try {
+                const stream = canvas.captureStream(30);
+                const mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'video/webm;codecs=vp9',
+                    videoBitsPerSecond: 2500000
+                });
+
+                const chunks = [];
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        chunks.push(e.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'video-with-text-300x300.webm';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    exportBtn.disabled = false;
+                    exportBtn.textContent = '💾 下載影片';
+                    
+                    canvasContainer.style.display = 'block';
+                    videoContainer.style.display = 'none';
+                    videoPlayer.pause();
+                    videoPlayer.currentTime = 0;
+                    
+                    alert('✅ 影片已成功下載!\n\n檔案格式:WebM (300x300)');
+                };
+
+                videoPlayer.currentTime = 0;
+                videoPlayer.play();
+                mediaRecorder.start();
+
+                videoPlayer.onended = () => {
+                    mediaRecorder.stop();
+                    videoPlayer.onended = null;
+                };
+
+            } catch (error) {
+                console.error('錄製錯誤:', error);
+                alert('❌ 錄製失敗');
+                
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'video-screenshot-300x300.png';
+                    a.click();
+                });
+                
+                exportBtn.disabled = false;
+                exportBtn.textContent = '💾 下載影片';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const slider = document.querySelector('.color-position');
+            const positionLabel = document.querySelector('.position-value');
+            slider.addEventListener('input', function() {
+                positionLabel.textContent = this.value + '%';
+            });
+        });
+    </script>
+</body>
+</html>
